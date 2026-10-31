@@ -24,17 +24,20 @@ jobs:
         with:
           node-version: '24'
       - name: Validate and build faculty site
+        id: build
         run: node .faculty/build.mjs
       - uses: actions/upload-artifact@v7
+        id: artifact
         with:
           name: faculty-site-${{ github.sha }}
           path: dist/
           if-no-files-found: error
           retention-days: 14
-      - name: Request publication of this successful build
-        if: github.event_name == 'push' && github.event.repository.is_template != true && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+      - name: Report build result
+        if: always() && github.event_name == 'push' && github.event.repository.is_template != true && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
         env:
           FACULTY_BUILD_SHA: ${{ github.sha }}
+          FACULTY_BUILD_STATUS: ${{ steps.build.outcome == 'success' && steps.artifact.outcome == 'success' && 'passed' || 'failed' }}
         run: |
           node --input-type=module <<'NODE'
           const audience='https://ds.ncf.edu/faculty/github/build';
@@ -43,7 +46,7 @@ jobs:
           const response=await fetch(url,{headers:{Authorization:'Bearer '+process.env.ACTIONS_ID_TOKEN_REQUEST_TOKEN}});
           if(!response.ok)throw Error('GitHub could not issue the build identity.');
           const {value}=await response.json();
-          const result=await fetch(audience,{method:'POST',headers:{Authorization:'Bearer '+value,'Content-Type':'application/json'},body:JSON.stringify({sha:process.env.FACULTY_BUILD_SHA})});
+          const result=await fetch(audience,{method:'POST',headers:{Authorization:'Bearer '+value,'Content-Type':'application/json'},body:JSON.stringify({sha:process.env.FACULTY_BUILD_SHA,status:process.env.FACULTY_BUILD_STATUS})});
           if(!result.ok)throw Error('Faculty publication request failed ('+result.status+'). Check the faculty workspace.');
-          console.log('Successful build submitted for publication.');
+          console.log('Build result reported: '+process.env.FACULTY_BUILD_STATUS+'.');
           NODE
