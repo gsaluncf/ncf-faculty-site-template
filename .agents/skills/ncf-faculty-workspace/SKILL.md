@@ -14,7 +14,7 @@ cd <repository-directory>
 
 Edit Markdown files in pages/ and update faculty-site.json when adding a page. Use version 1 and a pages array. Every page needs path, source, title, and access. The root path is /. Nested page paths use lowercase letters, digits, and hyphens, and end with /, such as /courses/fall/. The source is a Markdown path inside pages/. Keep the root page and use no more than 30 pages.
 
-Set access.mode to public for anyone, ncf for NCF Google sign-in, or emails for an explicit list. Set access.allowedEmails to [] for public or ncf. For emails, use an array such as ["student@ncf.edu"]. The faculty owner retains access. Each page has its own setting, including pages nested below another page.
+The home page at / must always use public access. For each subpage, use Published pages and access in the private workspace: choose Public, NCF sign-in or Specified email addresses, then Save access to commit and publish. Set access.mode to public for anyone, ncf for NCF Google sign-in, or emails for an explicit list. Set access.allowedEmails to [] for public or ncf. For emails, use an array such as ["student@ncf.edu"]. The faculty owner retains access. Each page has its own setting, including pages nested below another page.
 
 Save and publish the edits:
 
