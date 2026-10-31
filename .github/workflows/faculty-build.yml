@@ -47,6 +47,11 @@ jobs:
           if(!response.ok)throw Error('GitHub could not issue the build identity.');
           const {value}=await response.json();
           const result=await fetch(audience,{method:'POST',headers:{Authorization:'Bearer '+value,'Content-Type':'application/json'},body:JSON.stringify({sha:process.env.FACULTY_BUILD_SHA,status:process.env.FACULTY_BUILD_STATUS})});
-          if(!result.ok)throw Error('Faculty publication request failed ('+result.status+'). Check the faculty workspace.');
+          if(!result.ok){
+            const data=await result.json().catch(()=>null);
+            const detail=typeof data?.error==='string'?data.error.slice(0,300).replace(/[\r\n]/g,' '):'Check the faculty workspace.';
+            const type=(result.headers.get('Content-Type')||'unknown').split(';')[0].slice(0,80);
+            throw Error('Faculty publication request failed ('+result.status+'; '+type+'). '+detail);
+          }
           console.log('Build result reported: '+process.env.FACULTY_BUILD_STATUS+'.');
           NODE
