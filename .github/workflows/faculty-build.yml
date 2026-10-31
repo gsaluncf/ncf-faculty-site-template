@@ -1,0 +1,49 @@
+name: Faculty build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: faculty-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+      - name: Validate and build faculty site
+        run: node .faculty/build.mjs
+      - uses: actions/upload-artifact@v7
+        with:
+          name: faculty-site-${{ github.sha }}
+          path: dist/
+          if-no-files-found: error
+          retention-days: 14
+      - name: Request publication of this successful build
+        if: github.event_name == 'push' && github.event.repository.is_template != true && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        env:
+          FACULTY_BUILD_SHA: ${{ github.sha }}
+        run: |
+          node --input-type=module <<'NODE'
+          const audience='https://ds.ncf.edu/faculty/github/build';
+          const url=new URL(process.env.ACTIONS_ID_TOKEN_REQUEST_URL);
+          url.searchParams.set('audience',audience);
+          const response=await fetch(url,{headers:{Authorization:'Bearer '+process.env.ACTIONS_ID_TOKEN_REQUEST_TOKEN}});
+          if(!response.ok)throw Error('GitHub could not issue the build identity.');
+          const {value}=await response.json();
+          const result=await fetch(audience,{method:'POST',headers:{Authorization:'Bearer '+value,'Content-Type':'application/json'},body:JSON.stringify({sha:process.env.FACULTY_BUILD_SHA})});
+          if(!result.ok)throw Error('Faculty publication request failed ('+result.status+'). Check the faculty workspace.');
+          console.log('Successful build submitted for publication.');
+          NODE
