@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "pages": [
+    {
+      "path": "/",
+      "source": "pages/index.md",
+      "title": "Faculty website",
+      "access": {
+        "mode": "public",
+        "allowedEmails": []
+      }
+    },
+    {
+      "path": "/courses/",
+      "source": "pages/courses.md",
+      "title": "Courses",
+      "access": {
+        "mode": "ncf",
+        "allowedEmails": []
+      }
+    }
+  ]
+}
